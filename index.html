@@ -31,7 +31,7 @@
     --navy:#0A1E3F; --navy2:#14366B; --blue:#2456A6; --red:#C8372D; --line:#E5E7EB;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
-  body{background:var(--bg); color:var(--ink); font-family:'Pretendard Variable',Pretendard,-apple-system,'Segoe UI',Roboto,'Noto Sans KR',sans-serif; -webkit-font-smoothing:antialiased;}
+  body{background:var(--bg); color:var(--ink); font-family:'Pretendard Variable',Pretendard,-apple-system,'Segoe UI',Roboto,'Noto Sans KR',sans-serif; -webkit-font-smoothing:antialiased; word-break:keep-all; overflow-wrap:break-word;}
   .wrap{max-width:640px; margin:0 auto; padding:28px 18px 48px;}
   header{margin-bottom:20px;}
   .brand{display:flex; align-items:center; gap:8px; margin-bottom:14px;}
@@ -70,12 +70,12 @@
   .gauge .t{font-size:14px; font-weight:700; color:var(--ink2);}
   .gauge .v{font-size:34px; font-weight:800; color:var(--red); letter-spacing:-.02em;}
   .gauge .v.mid{color:var(--navy);} .gauge .v.low{color:var(--blue);}
-  .track{position:relative; height:12px; background:#E8EBEF; border-radius:999px; margin-top:10px;}
+  .track{position:relative; height:12px; background:#E8EBEF; border-radius:999px; margin:10px 11px 0;}
   .track .fill{position:absolute; left:0; top:0; bottom:0; border-radius:999px; background:linear-gradient(90deg,#2456A6,#C8372D);}
   .track .dot{position:absolute; top:50%; width:22px; height:22px; border-radius:50%; background:#fff; border:4px solid var(--navy); transform:translate(-50%,-50%); box-shadow:0 2px 6px rgba(10,30,63,.25);}
   .range{display:flex; justify-content:space-between; font-size:13px; color:var(--mute); margin-top:8px;}
   .range b{color:var(--ink2);}
-  .radar-wrap{display:flex; justify-content:center; margin-top:8px;}
+  .pos-note{font-size:13.5px; color:var(--ink2); margin-top:8px; line-height:1.55;}
   .metrics{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;}
   .metric{background:var(--bg); border-radius:12px; padding:13px 14px;}
   .metric .k{font-size:13px; font-weight:700; color:var(--ink2);}
@@ -138,9 +138,8 @@
       <div class="row"><span class="t">주가 위치 · 최근 20거래일 기준</span><span class="v" id="rPos">-</span></div>
       <div class="track"><div class="fill" id="rFill"></div><div class="dot" id="rDot"></div></div>
       <div class="range"><span>20일 최저 <b id="rLow">-</b></span><span>20일 최고 <b id="rHigh">-</b></span></div>
+      <div class="pos-note" id="rPosNote"></div>
     </div>
-
-    <div class="radar-wrap"><svg id="radar" width="300" height="260" viewBox="0 0 300 260"></svg></div>
 
     <div class="metrics">
       <div class="metric"><div class="k">주가 위치</div><div class="n" id="mPos">-</div><div class="d" id="mPosD">-</div></div>
@@ -176,10 +175,10 @@
   <div class="card how">
     <h2>이 체크기는 이렇게 봐요</h2>
     <ol>
-      <li><span><b>주가 위치</b> — 오늘 종가가 최근 20거래일 종가 범위(최저~최고) 중 어디쯤인지 보여줍니다. 100%에 가까울수록 최근 고점 근처, 0%에 가까울수록 최근 저점 근처예요.</span></li>
-      <li><span><b>거래 강도</b> — 오늘 거래량이 최근 20거래일 평균의 몇 배인지 보여줍니다. 거래가 따라붙는지 확인할 때 씁니다.</span></li>
-      <li><span><b>추세</b> — 현재가가 20일 이동평균보다 위인지 아래인지 보여줍니다. 평균 위에 있으면 단기 추세가 위쪽, 아래에 있으면 아래쪽을 향하고 있다는 뜻이에요.</span></li>
-      <li><span><b>단기 모멘텀</b> — 5거래일 전보다 주가가 얼마나 움직였는지 보여줍니다. 단기 탄력을 확인할 때 씁니다.</span></li>
+      <li><span><b>주가 위치</b> — 오늘 종가가 최근 20거래일 범위 중 어디쯤인지 위험·양호·긍정으로 보여줍니다. 고점 근처면 긍정, 저점 근처면 위험이에요.</span></li>
+      <li><span><b>거래 강도</b> — 오늘 거래량이 최근 20거래일 평균보다 얼마나 센지 보여줍니다. 거래가 따라붙는지 확인할 때 씁니다.</span></li>
+      <li><span><b>추세</b> — 현재가가 20일 평균보다 위면 상승 추세 우위, 아래면 하락 추세 우위, 비슷하면 중립으로 보여줍니다.</span></li>
+      <li><span><b>단기 모멘텀</b> — 5거래일 전보다 주가가 얼마나 움직였는지 단기 강세·약세로 보여줍니다. 단기 탄력을 확인할 때 씁니다.</span></li>
     </ol>
   </div>
 
@@ -250,60 +249,27 @@ function pick(){
   else { $('suggest').innerHTML = '<div class="empty">목록에 없는 종목이에요. 종목명을 정확히 입력해 주세요.</div>'; $('suggest').style.display = 'block'; }
 }
 
-function radar(scores){
-  const svg = $('radar'), NS = 'http://www.w3.org/2000/svg';
-  svg.innerHTML = '';
-  const cx = 150, cy = 132, R = 88;
-  const labels = [['주가 위치', 0, -1], ['거래 강도', 1, 0], ['추세', 0, 1], ['단기 모멘텀', -1, 0]];
-  const keys = ['position', 'volume', 'trend', 'momentum'];
-  const pt = (i, v) => {
-    const a = -Math.PI / 2 + i * Math.PI / 2;
-    const r = R * v / 100;
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-  };
-  [25, 50, 75, 100].forEach(g => {
-    const p = keys.map((_, i) => pt(i, g).join(',')).join(' ');
-    const poly = document.createElementNS(NS, 'polygon');
-    poly.setAttribute('points', p);
-    poly.setAttribute('fill', 'none');
-    poly.setAttribute('stroke', '#E5E7EB');
-    poly.setAttribute('stroke-width', '1');
-    svg.appendChild(poly);
-  });
-  keys.forEach((_, i) => {
-    const [x, y] = pt(i, 100);
-    const ln = document.createElementNS(NS, 'line');
-    ln.setAttribute('x1', cx); ln.setAttribute('y1', cy);
-    ln.setAttribute('x2', x); ln.setAttribute('y2', y);
-    ln.setAttribute('stroke', '#E5E7EB'); ln.setAttribute('stroke-width', '1');
-    svg.appendChild(ln);
-  });
-  const pts = keys.map((k, i) => pt(i, scores[k]).join(',')).join(' ');
-  const area = document.createElementNS(NS, 'polygon');
-  area.setAttribute('points', pts);
-  area.setAttribute('fill', 'rgba(36,86,166,.28)');
-  area.setAttribute('stroke', '#2456A6');
-  area.setAttribute('stroke-width', '2');
-  area.setAttribute('stroke-linejoin', 'round');
-  svg.appendChild(area);
-  keys.forEach((k, i) => {
-    const [x, y] = pt(i, scores[k]);
-    const c = document.createElementNS(NS, 'circle');
-    c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', '4');
-    c.setAttribute('fill', '#0A1E3F');
-    svg.appendChild(c);
-  });
-  labels.forEach(([txt, dx, dy], i) => {
-    const t = document.createElementNS(NS, 'text');
-    const lx = cx + dx * (R + 30), ly = cy + dy * (R + 24) + 5;
-    t.setAttribute('x', lx); t.setAttribute('y', ly);
-    t.setAttribute('text-anchor', 'middle');
-    t.setAttribute('font-size', '13.5');
-    t.setAttribute('font-weight', '700');
-    t.setAttribute('fill', '#4B5563');
-    t.textContent = txt;
-    svg.appendChild(t);
-  });
+function posVerdict(pos){
+  if (pos > 100) return { word: '긍정', cls: '' };
+  if (pos >= 80) return { word: '긍정', cls: '' };
+  if (pos >= 20) return { word: '양호', cls: 'mid' };
+  return { word: '위험', cls: 'low' };
+}
+function volVerdict(r){
+  if (r >= 2) return '매우 강함';
+  if (r >= 1.2) return '강함';
+  if (r >= 0.7) return '보통';
+  return '약함';
+}
+function trendVerdict(t){
+  if (t >= 3) return '상승 추세 우위';
+  if (t <= -3) return '하락 추세 우위';
+  return '중립';
+}
+function momVerdict(m){
+  if (m >= 5) return '단기 강세';
+  if (m <= -5) return '단기 약세';
+  return '중립';
 }
 
 function warnFor(d){
@@ -344,22 +310,29 @@ function show(code){
   ch.textContent = '전일 대비 ' + pct(d.change_pct);
   ch.className = 'c ' + (d.change_pct >= 0 ? 'up' : 'down');
   const pos = d.position_pct;
-  const pv = $('rPos');
-  pv.textContent = Math.round(pos) + '%';
-  pv.className = 'v ' + (pos >= 80 ? '' : pos <= 20 ? 'low' : 'mid');
+  const pv = posVerdict(pos);
+  const pvEl = $('rPos');
+  pvEl.textContent = pv.word;
+  pvEl.className = 'v ' + pv.cls;
   $('rFill').style.width = Math.max(0, Math.min(100, pos)) + '%';
   $('rDot').style.left = Math.max(0, Math.min(100, pos)) + '%';
   $('rLow').textContent = fmt(d.low20) + '원';
   $('rHigh').textContent = fmt(d.high20) + '원';
-  $('mPos').textContent = Math.round(pos) + '%';
-  $('mPosD').textContent = '20일 최저 ' + fmt(d.low20) + '원 ~ 최고 ' + fmt(d.high20) + '원 사이';
-  $('mVol').textContent = d.volume_ratio.toFixed(1) + '배';
-  $('mVolD').textContent = '오늘 ' + fmt(d.volume) + '주 · 20일 평균 ' + fmt(d.avg_volume20) + '주';
-  $('mTrend').textContent = pct(d.trend_pct);
-  $('mTrendD').textContent = '20일 평균 ' + fmt(d.ma20) + '원 대비';
-  $('mMom').textContent = pct(d.momentum5_pct);
-  $('mMomD').textContent = '5거래일 전 종가 대비';
-  radar(d.scores);
+  $('rPosNote').textContent =
+    pos < 0 ? '현재가 ' + fmt(d.price) + '원 — 20일 최저 ' + fmt(d.low20) + '원보다 ' + fmt(d.low20 - d.price) + '원 아래에 있어요.'
+    : pos > 100 ? '현재가 ' + fmt(d.price) + '원 — 20일 최고 ' + fmt(d.high20) + '원보다 ' + fmt(d.price - d.high20) + '원 위에 있어요.'
+    : '현재가 ' + fmt(d.price) + '원 — 20일 최저 ' + fmt(d.low20) + '원 ~ 최고 ' + fmt(d.high20) + '원 사이예요.';
+  $('mPos').textContent = pv.word;
+  $('mPosD').textContent =
+    pos < 0 ? '20일 최저 ' + fmt(d.low20) + '원보다 ' + fmt(d.low20 - d.price) + '원 아래'
+    : pos > 100 ? '20일 최고 ' + fmt(d.high20) + '원보다 ' + fmt(d.price - d.high20) + '원 위'
+    : '20일 최저 ' + fmt(d.low20) + '원 ~ 최고 ' + fmt(d.high20) + '원 사이';
+  $('mVol').textContent = volVerdict(d.volume_ratio);
+  $('mVolD').textContent = '오늘 ' + fmt(d.volume) + '주 · 20일 평균 ' + fmt(d.avg_volume20) + '주 (' + d.volume_ratio.toFixed(1) + '배)';
+  $('mTrend').textContent = trendVerdict(d.trend_pct);
+  $('mTrendD').textContent = '20일 평균 ' + fmt(d.ma20) + '원보다 ' + Math.abs(d.trend_pct).toFixed(2) + '% ' + (d.trend_pct >= 0 ? '위' : '아래');
+  $('mMom').textContent = momVerdict(d.momentum5_pct);
+  $('mMomD').textContent = '5거래일 전보다 ' + Math.abs(d.momentum5_pct).toFixed(2) + '% ' + (d.momentum5_pct >= 0 ? '상승' : '하락');
   warnFor(d);
   $('result').style.display = 'block';
   $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
