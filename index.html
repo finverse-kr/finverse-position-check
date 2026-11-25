@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>핀버스 내 종목 위치 체크기 | 지금 내 종목은 어디쯤?</title>
+<meta name="description" content="종목명만 치면 내 종목의 지금 위치가 바로 나와요. 최근 20거래일 고저 대비 위치, 거래 강도, 추세를 한눈에. 전일 종가 기준, 교육용 참고 자료입니다.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://finverse-kr.github.io/finverse-position-check/">
+<meta property="og:title" content="핀버스 내 종목 위치 체크기 | 지금 내 종목은 어디쯤?">
+<meta property="og:description" content="종목명만 치면 내 종목의 지금 위치가 바로 나와요. 최근 20거래일 고저 대비 위치, 거래 강도, 추세를 한눈에.">
+<meta property="og:image" content="https://finverse-kr.github.io/finverse-position-check/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="핀버스 내 종목 위치 체크기 | 지금 내 종목은 어디쯤?">
+<meta name="twitter:description" content="종목명만 치면 내 종목의 지금 위치가 바로 나와요. 최근 20거래일 고저 대비 위치, 거래 강도, 추세를 한눈에.">
+<meta name="twitter:image" content="https://finverse-kr.github.io/finverse-position-check/og-image.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF; --ink:#111827; --ink2:#4B5563; --mute:#9CA3AF;
+    --navy:#0A1E3F; --navy2:#14366B; --blue:#2456A6; --red:#C8372D; --line:#E5E7EB;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Pretendard Variable',Pretendard,-apple-system,'Segoe UI',Roboto,'Noto Sans KR',sans-serif; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:640px; margin:0 auto; padding:28px 18px 48px;}
+  header{margin-bottom:20px;}
+  .brand{display:flex; align-items:center; gap:8px; margin-bottom:14px;}
+  .brand .mark{width:34px; height:34px; border-radius:9px; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px;}
+  .brand .name{font-weight:800; font-size:16px; color:var(--navy); letter-spacing:-.02em;}
+  .brand .tag{font-size:12px; color:var(--mute); font-weight:600;}
+  h1{font-size:27px; line-height:1.3; letter-spacing:-.03em; font-weight:800;}
+  h1 .accent{color:var(--blue);}
+  .sub{margin-top:8px; font-size:15px; line-height:1.6; color:var(--ink2);}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px; margin-top:16px;}
+  .searchbox{position:relative;}
+  .searchbox input{width:100%; height:56px; border:2px solid var(--navy); border-radius:12px; padding:0 48px 0 16px; font-size:17px; font-family:inherit; outline:none; background:#fff;}
+  .searchbox input:focus{border-color:var(--blue); box-shadow:0 0 0 3px rgba(36,86,166,.15);}
+  .searchbox .go{position:absolute; right:8px; top:8px; height:40px; padding:0 16px; border:none; border-radius:9px; background:var(--navy); color:#fff; font-size:15px; font-weight:700; font-family:inherit; cursor:pointer;}
+  .suggest{position:absolute; left:0; right:0; top:62px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 12px 32px rgba(10,30,63,.14); z-index:20; overflow:hidden; display:none;}
+  .suggest button{display:flex; width:100%; justify-content:space-between; align-items:center; padding:13px 16px; border:none; background:#fff; font-family:inherit; font-size:15px; cursor:pointer; text-align:left;}
+  .suggest button:hover, .suggest button.active{background:#EEF2F9;}
+  .suggest .code{font-size:13px; color:var(--mute);}
+  .suggest .empty{padding:14px 16px; font-size:14px; color:var(--ink2);}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .chips button{border:1px solid var(--line); background:#fff; border-radius:999px; padding:8px 13px; font-size:13.5px; font-weight:600; color:var(--ink2); font-family:inherit; cursor:pointer;}
+  .chips button:hover{border-color:var(--navy); color:var(--navy);}
+  .chips .lbl{font-size:13px; color:var(--mute); font-weight:600; align-self:center; margin-right:2px;}
+  .meta{font-size:13px; color:var(--mute); margin-top:12px; line-height:1.5;}
+  /* result */
+  #result{display:none;}
+  .stock-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px;}
+  .stock-head .nm{font-size:20px; font-weight:800; letter-spacing:-.02em;}
+  .stock-head .cd{font-size:13px; color:var(--mute); margin-top:3px;}
+  .stock-head .pr{text-align:right;}
+  .stock-head .pr .p{font-size:24px; font-weight:800; letter-spacing:-.02em;}
+  .stock-head .pr .c{font-size:14px; font-weight:700; margin-top:2px;}
+  .up{color:var(--red);} .down{color:var(--blue);}
+  .gauge{margin-top:20px;}
+  .gauge .row{display:flex; justify-content:space-between; align-items:baseline;}
+  .gauge .t{font-size:14px; font-weight:700; color:var(--ink2);}
+  .gauge .v{font-size:34px; font-weight:800; color:var(--red); letter-spacing:-.02em;}
+  .gauge .v.mid{color:var(--navy);} .gauge .v.low{color:var(--blue);}
+  .track{position:relative; height:12px; background:#E8EBEF; border-radius:999px; margin-top:10px;}
+  .track .fill{position:absolute; left:0; top:0; bottom:0; border-radius:999px; background:linear-gradient(90deg,#2456A6,#C8372D);}
+  .track .dot{position:absolute; top:50%; width:22px; height:22px; border-radius:50%; background:#fff; border:4px solid var(--navy); transform:translate(-50%,-50%); box-shadow:0 2px 6px rgba(10,30,63,.25);}
+  .range{display:flex; justify-content:space-between; font-size:13px; color:var(--mute); margin-top:8px;}
+  .range b{color:var(--ink2);}
+  .radar-wrap{display:flex; justify-content:center; margin-top:8px;}
+  .metrics{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;}
+  .metric{background:var(--bg); border-radius:12px; padding:13px 14px;}
+  .metric .k{font-size:13px; font-weight:700; color:var(--ink2);}
+  .metric .n{font-size:19px; font-weight:800; margin-top:4px; letter-spacing:-.02em;}
+  .metric .d{font-size:12.5px; color:var(--mute); margin-top:3px; line-height:1.45;}
+  .warn{margin-top:16px; border-radius:12px; padding:15px 16px; background:#FEF3F2; border:1px solid #FECDC2;}
+  .warn.cool{background:#EFF4FF; border-color:#C7D7F5;}
+  .warn .w-t{font-size:16px; font-weight:800; color:var(--red);}
+  .warn.cool .w-t{color:var(--navy);}
+  .warn .w-d{font-size:14px; line-height:1.6; color:var(--ink2); margin-top:5px;}
+  .qlinks{margin-top:16px; border-top:1px solid var(--line); padding-top:14px;}
+  .qlinks .q-t{font-size:13px; font-weight:700; color:var(--mute); margin-bottom:8px;}
+  .qlinks a{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:13px 4px; border-bottom:1px solid #F0F1F3; text-decoration:none; color:var(--ink); font-size:15.5px; font-weight:700; line-height:1.45;}
+  .qlinks a:last-child{border-bottom:none;}
+  .qlinks a .arr{color:var(--blue); flex:none; font-size:17px;}
+  .qlinks a small{display:block; font-size:13px; font-weight:500; color:var(--mute); margin-top:2px;}
+  .share{margin-top:14px; display:flex; gap:8px;}
+  .share button{flex:1; height:46px; border-radius:11px; border:1px solid var(--line); background:#fff; font-family:inherit; font-size:14.5px; font-weight:700; cursor:pointer; color:var(--navy);}
+  .share button.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .how{margin-top:16px;}
+  .how h2{font-size:17px; font-weight:800; letter-spacing:-.02em; margin-bottom:10px;}
+  .how ol{list-style:none; counter-reset:step;}
+  .how li{counter-increment:step; display:flex; gap:12px; padding:11px 0; border-bottom:1px solid #F0F1F3; font-size:14.5px; line-height:1.6; color:var(--ink2);}
+  .how li:last-child{border-bottom:none;}
+  .how li::before{content:counter(step); flex:none; width:24px; height:24px; border-radius:50%; background:var(--navy); color:#fff; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .how li b{color:var(--ink);}
+  footer{margin-top:22px; font-size:12.5px; line-height:1.7; color:var(--mute);}
+  footer a{color:var(--mute);}
+  @media (max-width:480px){ h1{font-size:24px;} .gauge .v{font-size:30px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="mark">F</div>
+      <div><div class="name">핀버스 | FINVERSE</div><div class="tag">차트를 읽는 법을 배우는 곳</div></div>
+    </div>
+    <h1>내 종목, <span class="accent">지금 어디쯤</span>일까요?</h1>
+    <p class="sub">종목명만 치면 바로 나와요. 최근 20거래일 고저 대비 위치, 거래 강도, 추세를 한눈에 보여드립니다.</p>
+  </header>
+
+  <div class="card">
+    <div class="searchbox">
+      <input id="q" type="text" placeholder="종목명을 입력하세요 (예: 삼성전자, 실리콘투)" autocomplete="off" inputmode="search">
+      <button class="go" id="goBtn" type="button">확인</button>
+      <div class="suggest" id="suggest"></div>
+    </div>
+    <div class="chips" id="chips"><span class="lbl">많이 찾는 종목</span></div>
+    <p class="meta">전일 종가 기준 · 매일 장 마감 후 갱신 · <span id="asOf"></span></p>
+  </div>
+
+  <div class="card" id="result">
+    <div class="stock-head">
+      <div><div class="nm" id="rName">-</div><div class="cd" id="rCode">-</div></div>
+      <div class="pr"><div class="p" id="rPrice">-</div><div class="c" id="rChange">-</div></div>
+    </div>
+
+    <div class="gauge">
+      <div class="row"><span class="t">주가 위치 · 최근 20거래일 기준</span><span class="v" id="rPos">-</span></div>
+      <div class="track"><div class="fill" id="rFill"></div><div class="dot" id="rDot"></div></div>
+      <div class="range"><span>20일 최저 <b id="rLow">-</b></span><span>20일 최고 <b id="rHigh">-</b></span></div>
+    </div>
+
+    <div class="radar-wrap"><svg id="radar" width="300" height="260" viewBox="0 0 300 260"></svg></div>
+
+    <div class="metrics">
+      <div class="metric"><div class="k">주가 위치</div><div class="n" id="mPos">-</div><div class="d" id="mPosD">-</div></div>
+      <div class="metric"><div class="k">거래 강도</div><div class="n" id="mVol">-</div><div class="d" id="mVolD">-</div></div>
+      <div class="metric"><div class="k">추세 · 20일 평균 대비</div><div class="n" id="mTrend">-</div><div class="d" id="mTrendD">-</div></div>
+      <div class="metric"><div class="k">단기 모멘텀 · 5일</div><div class="n" id="mMom">-</div><div class="d" id="mMomD">-</div></div>
+    </div>
+
+    <div class="warn" id="warnBox">
+      <div class="w-t" id="warnTitle"></div>
+      <div class="w-d" id="warnDesc"></div>
+    </div>
+
+    <div class="qlinks">
+      <div class="q-t">이럴 때 뭘 봐야 할까요?</div>
+      <a id="qTrend" href="https://blog.naver.com/ckdwls12342/224491089847" target="_blank" rel="noopener">
+        <span>Q. 추세선은 어떻게 볼까요?<small>단타에서 이탈을 확인하는 기준, 상승·하락 추세선 제대로 긋기</small></span><span class="arr">›</span>
+      </a>
+      <a id="qSr" href="https://blog.naver.com/ckdwls12342/224489712197" target="_blank" rel="noopener">
+        <span>Q. 지지선·저항선은 어디로 봐야 할까요?<small>선이 아닌 영역으로 봐야 하는 이유</small></span><span class="arr">›</span>
+      </a>
+      <a href="https://blog.naver.com/ckdwls12342" target="_blank" rel="noopener">
+        <span>핀버스 블로그에서 차트 읽는 법 배우기<small>기초부터 정규과정까지, 실제 차트 사례로 쉽게</small></span><span class="arr">›</span>
+      </a>
+    </div>
+
+    <div class="share">
+      <button class="primary" id="copyBtn" type="button">내 결과 링크 복사하기</button>
+      <button id="againBtn" type="button">다른 종목 보기</button>
+    </div>
+  </div>
+
+  <div class="card how">
+    <h2>이 체크기는 이렇게 봐요</h2>
+    <ol>
+      <li><span><b>주가 위치</b> — 오늘 종가가 최근 20거래일 종가 범위(최저~최고) 중 어디쯤인지 보여줍니다. 100%에 가까울수록 최근 고점 근처, 0%에 가까울수록 최근 저점 근처예요.</span></li>
+      <li><span><b>거래 강도</b> — 오늘 거래량이 최근 20거래일 평균의 몇 배인지 보여줍니다. 거래가 따라붙는지 확인할 때 씁니다.</span></li>
+      <li><span><b>추세</b> — 현재가가 20일 이동평균보다 위인지 아래인지 보여줍니다. 평균 위에 있으면 단기 추세가 위쪽, 아래에 있으면 아래쪽을 향하고 있다는 뜻이에요.</span></li>
+      <li><span><b>단기 모멘텀</b> — 5거래일 전보다 주가가 얼마나 움직였는지 보여줍니다. 단기 탄력을 확인할 때 씁니다.</span></li>
+    </ol>
+  </div>
+
+  <footer>
+    이 페이지는 교육용 참고 자료입니다. 매수·매도 권유가 아니며, 특정 종목에 대한 투자 판단을 대신하지 않습니다.
+    수치는 전일 종가 기준이며 매일 장 마감 후 갱신됩니다. 데이터 출처: Yahoo Finance.
+    핀버스는 차트를 읽는 법을 가르치는 곳입니다. 외우는 공부가 아니라, 스스로 판단하는 힘을 기릅니다.
+    <br><a href="https://blog.naver.com/ckdwls12342" target="_blank" rel="noopener">핀버스 블로그</a> ·
+    <a href="https://finverse-academy.enjoyablepanda2.chatgpt.site/" target="_blank" rel="noopener">핀버스 홈페이지</a>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let STOCKS = [], DATA = null, current = null;
+
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+const pct = (n, sign=true) => (sign && n > 0 ? '+' : '') + n.toFixed(2) + '%';
+
+async function load(){
+  const [s, d] = await Promise.all([
+    fetch('stocks.json').then(r => r.json()),
+    fetch('data.json').then(r => r.json())
+  ]);
+  STOCKS = s; DATA = d;
+  $('asOf').textContent = '기준일 ' + d.as_of + ' · ' + d.count + '개 종목';
+  renderChips();
+  const code = new URLSearchParams(location.search).get('s');
+  if (code && DATA.stocks[code]) show(code);
+}
+function renderChips(){
+  const hot = ['005930','000660','257720','278470','005380','086520','035420','373220'];
+  const box = $('chips');
+  hot.forEach(c => {
+    const st = STOCKS.find(x => x.code === c);
+    if (!st) return;
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = st.name;
+    b.onclick = () => show(c);
+    box.appendChild(b);
+  });
+}
+function suggest(q){
+  const box = $('suggest');
+  q = q.trim();
+  if (!q){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  const hits = STOCKS.filter(s => s.name.includes(q) || s.code.includes(q)).slice(0, 8);
+  if (!hits.length){
+    box.innerHTML = '<div class="empty">목록에 없는 종목이에요. 인기 종목 141개가 들어 있어요.</div>';
+    box.style.display = 'block'; return;
+  }
+  box.innerHTML = '';
+  hits.forEach(s => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = '<span>' + s.name + ' <span class="code">' + s.market + '</span></span><span class="code">' + s.code + '</span>';
+    b.onclick = () => { $('q').value = s.name; box.style.display = 'none'; show(s.code); };
+    box.appendChild(b);
+  });
+  box.style.display = 'block';
+}
+function pick(){
+  const q = $('q').value.trim();
+  if (!q) return;
+  const hit = STOCKS.find(s => s.name === q || s.code === q)
+    || STOCKS.find(s => s.name.includes(q) || s.code.includes(q));
+  if (hit) show(hit.code);
+  else { $('suggest').innerHTML = '<div class="empty">목록에 없는 종목이에요. 종목명을 정확히 입력해 주세요.</div>'; $('suggest').style.display = 'block'; }
+}
+
+function radar(scores){
+  const svg = $('radar'), NS = 'http://www.w3.org/2000/svg';
+  svg.innerHTML = '';
+  const cx = 150, cy = 132, R = 88;
+  const labels = [['주가 위치', 0, -1], ['거래 강도', 1, 0], ['추세', 0, 1], ['단기 모멘텀', -1, 0]];
+  const keys = ['position', 'volume', 'trend', 'momentum'];
+  const pt = (i, v) => {
+    const a = -Math.PI / 2 + i * Math.PI / 2;
+    const r = R * v / 100;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  };
+  [25, 50, 75, 100].forEach(g => {
+    const p = keys.map((_, i) => pt(i, g).join(',')).join(' ');
+    const poly = document.createElementNS(NS, 'polygon');
+    poly.setAttribute('points', p);
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', '#E5E7EB');
+    poly.setAttribute('stroke-width', '1');
+    svg.appendChild(poly);
+  });
+  keys.forEach((_, i) => {
+    const [x, y] = pt(i, 100);
+    const ln = document.createElementNS(NS, 'line');
+    ln.setAttribute('x1', cx); ln.setAttribute('y1', cy);
+    ln.setAttribute('x2', x); ln.setAttribute('y2', y);
+    ln.setAttribute('stroke', '#E5E7EB'); ln.setAttribute('stroke-width', '1');
+    svg.appendChild(ln);
+  });
+  const pts = keys.map((k, i) => pt(i, scores[k]).join(',')).join(' ');
+  const area = document.createElementNS(NS, 'polygon');
+  area.setAttribute('points', pts);
+  area.setAttribute('fill', 'rgba(36,86,166,.28)');
+  area.setAttribute('stroke', '#2456A6');
+  area.setAttribute('stroke-width', '2');
+  area.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(area);
+  keys.forEach((k, i) => {
+    const [x, y] = pt(i, scores[k]);
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', '4');
+    c.setAttribute('fill', '#0A1E3F');
+    svg.appendChild(c);
+  });
+  labels.forEach(([txt, dx, dy], i) => {
+    const t = document.createElementNS(NS, 'text');
+    const lx = cx + dx * (R + 30), ly = cy + dy * (R + 24) + 5;
+    t.setAttribute('x', lx); t.setAttribute('y', ly);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('font-size', '13.5');
+    t.setAttribute('font-weight', '700');
+    t.setAttribute('fill', '#4B5563');
+    t.textContent = txt;
+    svg.appendChild(t);
+  });
+}
+
+function warnFor(d){
+  const box = $('warnBox');
+  let title, desc, cool = false;
+  if (d.position_pct >= 80){
+    title = '추세 이탈에 주의하세요!';
+    desc = '지금은 최근 20거래일 고점 근처입니다. 이 구간에서는 추세선을 이탈하는지, 거래가 따라붙는지를 먼저 확인해야 해요. 아래 질문부터 확인해 보세요.';
+  } else if (d.position_pct <= 20){
+    title = '지지선 이탈 여부를 확인하세요';
+    desc = '지금은 최근 20거래일 저점 근처입니다. 지지선에서 버티는지, 이탈하는지를 먼저 확인해야 해요. 아래 질문부터 확인해 보세요.';
+  } else if (d.volume_ratio >= 2){
+    title = '거래가 평소보다 강하게 터졌어요';
+    desc = '오늘 거래량은 최근 평균의 ' + d.volume_ratio.toFixed(1) + '배입니다. 가격이 움직일 때 거래가 함께 가는지, 추세와 방향이 맞는지 확인해 보세요.';
+  } else if (d.trend_pct < 0){
+    title = '단기 추세가 아래를 향하고 있어요';
+    desc = '현재가가 20일 평균보다 아래에 있습니다. 추세가 꺾인 건지, 눌림 구간인지 구분하려면 추세선을 직접 그어보는 게 가장 빨라요.';
+  } else {
+    title = '지금은 중간쯤에 있어요';
+    desc = '최근 20거래일 범위 중간쯤입니다. 이럴 때는 추세선과 지지·저항 위치를 함께 확인하는 게 좋아요.';
+    cool = true;
+  }
+  box.classList.toggle('cool', cool);
+  $('warnTitle').textContent = title;
+  $('warnDesc').textContent = desc;
+}
+
+function show(code){
+  const d = DATA.stocks[code];
+  if (!d) return;
+  current = d;
+  $('q').value = d.name;
+  $('suggest').style.display = 'none';
+  $('rName').textContent = d.name;
+  $('rCode').textContent = d.code + ' · ' + d.market + ' · 기준일 ' + d.as_of;
+  $('rPrice').textContent = fmt(d.price) + '원';
+  const ch = $('rChange');
+  ch.textContent = '전일 대비 ' + pct(d.change_pct);
+  ch.className = 'c ' + (d.change_pct >= 0 ? 'up' : 'down');
+  const pos = d.position_pct;
+  const pv = $('rPos');
+  pv.textContent = Math.round(pos) + '%';
+  pv.className = 'v ' + (pos >= 80 ? '' : pos <= 20 ? 'low' : 'mid');
+  $('rFill').style.width = Math.max(0, Math.min(100, pos)) + '%';
+  $('rDot').style.left = Math.max(0, Math.min(100, pos)) + '%';
+  $('rLow').textContent = fmt(d.low20) + '원';
+  $('rHigh').textContent = fmt(d.high20) + '원';
+  $('mPos').textContent = Math.round(pos) + '%';
+  $('mPosD').textContent = '20일 최저 ' + fmt(d.low20) + '원 ~ 최고 ' + fmt(d.high20) + '원 사이';
+  $('mVol').textContent = d.volume_ratio.toFixed(1) + '배';
+  $('mVolD').textContent = '오늘 ' + fmt(d.volume) + '주 · 20일 평균 ' + fmt(d.avg_volume20) + '주';
+  $('mTrend').textContent = pct(d.trend_pct);
+  $('mTrendD').textContent = '20일 평균 ' + fmt(d.ma20) + '원 대비';
+  $('mMom').textContent = pct(d.momentum5_pct);
+  $('mMomD').textContent = '5거래일 전 종가 대비';
+  radar(d.scores);
+  warnFor(d);
+  $('result').style.display = 'block';
+  $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  history.replaceState(null, '', location.pathname + '?s=' + code);
+}
+
+$('q').addEventListener('input', e => suggest(e.target.value));
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); pick(); } });
+$('goBtn').addEventListener('click', pick);
+document.addEventListener('click', e => { if (!e.target.closest('.searchbox')) $('suggest').style.display = 'none'; });
+$('againBtn').addEventListener('click', () => { $('q').value = ''; $('q').focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+$('copyBtn').addEventListener('click', async () => {
+  if (!current) return;
+  const url = location.origin + location.pathname + '?s=' + current.code;
+  try { await navigator.clipboard.writeText(url); $('copyBtn').textContent = '복사했어요!'; }
+  catch(e){ prompt('아래 링크를 복사하세요', url); return; }
+  setTimeout(() => { $('copyBtn').textContent = '내 결과 링크 복사하기'; }, 2000);
+});
+load();
+</script>
+</body>
+</html>
